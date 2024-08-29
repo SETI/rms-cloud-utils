@@ -2,12 +2,12 @@
 set -e
 
 if [ $# != 1 ] && [ $# != 2 ]; then
-    echo "Usage: update_all_one_type.sh <type> [--force]"
+    echo "Usage: update_all_one_type.sh <type> [--force | --force-expanded]"
     exit -1
 fi
 
 if [ $# == 2 ] && [ "$2" != "--force" ]; then
-    echo "Usage: update_all_one_type.sh <type> [--force]"
+    echo "Usage: update_all_one_type.sh <type> [--force | --force-expanded]"
     exit -1
 fi
 

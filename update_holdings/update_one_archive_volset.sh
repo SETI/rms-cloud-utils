@@ -2,12 +2,12 @@
 set -e
 
 if [ $# != 2 ] && [ $# != 3 ]; then
-    echo "Usage: update_one_archive_volset.sh <type> <volset> [--force]"
+    echo "Usage: update_one_archive_volset.sh <type> <volset> [--force | --force-expanded]"
     exit -1
 fi
 
 if [ $# == 3 ] && [ "$3" != "--force" ]; then
-    echo "Usage: update_one_archive_volset.sh <type> <volset> [--force]"
+    echo "Usage: update_one_archive_volset.sh <type> <volset> [--force | --force-expanded]"
     exit -1
 fi
 
@@ -30,5 +30,5 @@ for ARCHIVE_PATH in $(gsutil ls gs://rms-node/holdings/archives-${TYPE}/${VOLSET
     ARCHIVE_FILE=$(basename ${ARCHIVE_PATH})
     VOLUME=${ARCHIVE_FILE%"${TARGZ}"}
     echo Updating volume ${TYPE}/${VOLSET}/${VOLUME}
-    ./update_one_archive_volume.sh ${TYPE} ${VOLSET} ${VOLUME} ${FORCE} > logs/${TYPE}_${VOLSET}_${VOLUME} 2>&1
+    ./update_one_archive_volume.sh ${TYPE} ${VOLSET} ${VOLUME} ${FORCE} > logs/${TYPE}_${VOLSET}_${VOLUME} 2>&1 &
 done

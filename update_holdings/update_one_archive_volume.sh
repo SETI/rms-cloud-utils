@@ -4,8 +4,8 @@ if [ $# != 3 ] && [ $# != 4 ]; then
     exit -1
 fi
 
-if [ $# == 4 ] && [ "$4" != "--force" ]; then
-    echo "Usage: update_one_archive_volume.sh <type> <volset> <volume> [--force]"
+if [ $# == 4 ] && [ "$4" != "--force" ] && [ "$4" != "--force-expanded" ]; then
+    echo "Usage: update_one_archive_volume.sh <type> <volset> <volume> [--force | --force-expanded]"
     exit -1
 fi
 
@@ -21,46 +21,72 @@ fi
 
 ARCHIVE_FILE=${VOLUME}${SUFFIX}.tar.gz
 
-if [ -z "$FORCE" ]; then
-    set +e
-    gsutil ls gs://rms-node-holdings/pds3-holdings/archives-${TYPE}/${VOLSET}/${ARCHIVE_FILE} > /dev/null 2>&1
-    if [ $? == 0 ]; then
-        echo Skipping ${TYPE}/${VOLSET}/${ARCHIVE_FILE} because archive file already exists
+mkdir -p ${VOLSET}
+
+COPY_ARCHIVE=0
+
+gsutil ls gs://rms-node-holdings/pds3-holdings/archives-${TYPE}/${VOLSET}/${ARCHIVE_FILE} > /dev/null 2>&1
+if [ $? == 0 ]; then
+    if [[ "$FORCE" == "--force-expanded" ]]; then
+        echo "** Archive file already exists in destination and --force-expanded supplied; retrieving destination version"
+        echo "** gsutil cp gs://rms-node-holdings/pds3-holdings/archives-${TYPE}/${VOLSET}/${ARCHIVE_FILE} ${VOLSET}/${ARCHIVE_FILE}"
+        gsutil cp gs://rms-node-holdings/pds3-holdings/archives-${TYPE}/${VOLSET}/${ARCHIVE_FILE} ${VOLSET}/${ARCHIVE_FILE}
+        if [ $? -ne 0 ]; then
+            echo "FAIL: gsutil cp gs://rms-node-holdings/pds3-holdings/archives-${TYPE}/${VOLSET}/${ARCHIVE_FILE} ${VOLSET}/${ARCHIVE_FILE}"
+            rm -f ${VOLSET}/${ARCHIVE_FILE}
+            rm -rf ${VOLSET}/${VOLUME}
+            exit 1
+        fi
+    elif [[ "$FORCE" == "--force" ]]; then
+        echo "** Archive file already exists in destination and --force supplied; rertieving source version"
+        COPY_ARCHIVE=1
+    else
+        echo "** Archive file already exists in destination and --force not supplied; exiting"
         exit 0
     fi
-    set -e
+else
+    echo "** Archive file does not exist at destination"
+    COPY_ARCHIVE=1
 fi
 
-echo "** gsutil cp gs://rms-node/holdings/archives-${TYPE}/${VOLSET}/${ARCHIVE_FILE} ."
-gsutil cp gs://rms-node/holdings/archives-${TYPE}/${VOLSET}/${ARCHIVE_FILE} .
+if [ ${COPY_ARCHIVE} == 1 ]; then
+    echo "** gsutil cp gs://rms-node/holdings/archives-${TYPE}/${VOLSET}/${ARCHIVE_FILE} ${VOLSET}/${ARCHIVE_FILE}"
+    gsutil cp gs://rms-node/holdings/archives-${TYPE}/${VOLSET}/${ARCHIVE_FILE} ${VOLSET}/${ARCHIVE_FILE}
+    if [ $? -ne 0 ]; then
+        echo "FAIL: gsutil cp gs://rms-node/holdings/archives-${TYPE}/${VOLSET}/${ARCHIVE_FILE} ${VOLSET}/${ARCHIVE_FILE}"
+        rm -f ${VOLSET}/${ARCHIVE_FILE}
+        rm -rf ${VOLSET}/${VOLUME}
+        exit 1
+    fi
+
+    echo "** gsutil cp ${VOLSET}/${ARCHIVE_FILE} gs://rms-node-holdings/pds3-holdings/archives-${TYPE}/${VOLSET}/${ARCHIVE_FILE}"
+    gsutil cp ${VOLSET}/${ARCHIVE_FILE} gs://rms-node-holdings/pds3-holdings/archives-${TYPE}/${VOLSET}/${ARCHIVE_FILE}
+    if [ $? -ne 0 ]; then
+        echo "FAIL: gsutil cp ${VOLSET}/${ARCHIVE_FILE} gs://rms-node-holdings/pds3-holdings/archives-${TYPE}/${VOLSET}/${ARCHIVE_FILE}"
+        rm -f ${VOLSET}/${ARCHIVE_FILE}
+        rm -rf ${VOLSET}/${VOLUME}
+        exit 1
+    fi
+fi
+
+rm -rf ${VOLSET}/${VOLUME}
+echo "** (cd ${VOLSET}; tar xf ${ARCHIVE_FILE})"
+(cd ${VOLSET}; tar xf ${ARCHIVE_FILE})
 if [ $? -ne 0 ]; then
-    echo "FAIL: gsutil cp gs://rms-node/holdings/archives-${TYPE}/${VOLSET}/${ARCHIVE_FILE} ."
-    rm -f ${ARCHIVE_FILE}
-    rm -rf ${VOLUME}
+    echo "FAIL: (cd ${VOLSET}; tar xf ${ARCHIVE_FILE})"
+    rm -f ${VOLSET}/${ARCHIVE_FILE}
+    rm -rf ${VOLSET}/${VOLUME}
     exit 1
 fi
-tar xf ${ARCHIVE_FILE}
+echo "** gsutil -m rsync -r ${VOLSET}/${VOLUME} gs://rms-node-holdings/pds3-holdings/${TYPE}/${VOLSET}/${VOLUME}"
+gsutil -m rsync -r ${VOLSET}/${VOLUME} gs://rms-node-holdings/pds3-holdings/${TYPE}/${VOLSET}/${VOLUME}
 if [ $? -ne 0 ]; then
-    echo "FAIL: tar xf ${ARCHIVE_FILE}"
-    rm -f ${ARCHIVE_FILE}
-    rm -rf ${VOLUME}
+    echo "FAIL: gsutil -m rsync -r ${VOLSET}/${VOLUME} gs://rms-node-holdings/pds3-holdings/${TYPE}/${VOLSET}/${VOLUME}"
+    rm -f ${VOLSET}/${ARCHIVE_FILE}
+    rm -rf ${VOLSET}/${VOLUME}
     exit 1
 fi
-gsutil cp ${ARCHIVE_FILE} gs://rms-node-holdings/pds3-holdings/archives-${TYPE}/${VOLSET}/${ARCHIVE_FILE}
-if [ $? -ne 0 ]; then
-    echo "FAIL: gsutil cp ${ARCHIVE_FILE} gs://rms-node-holdings/pds3-holdings/archives-${TYPE}/${VOLSET}/${ARCHIVE_FILE}"
-    rm -f ${ARCHIVE_FILE}
-    rm -rf ${VOLUME}
-    exit 1
-fi
-gsutil -m rsync -r ${VOLUME} gs://rms-node-holdings/pds3-holdings/${TYPE}/${VOLSET}/${VOLUME}
-if [ $? -ne 0 ]; then
-    echo "FAIL: gsutil -m rsync -r ${VOLUME} gs://rms-node-holdings/pds3-holdings/${TYPE}/${VOLSET}/${VOLUME}"
-    rm -f ${ARCHIVE_FILE}
-    rm -rf ${VOLUME}
-    exit 1
-fi
-rm ${ARCHIVE_FILE}
-rm -rf ${VOLUME}
+rm ${VOLSET}/${ARCHIVE_FILE}
+rm -rf ${VOLSET}/${VOLUME}
 
 echo "SUCCESS"
