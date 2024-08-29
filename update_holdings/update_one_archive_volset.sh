@@ -6,7 +6,7 @@ if [ $# != 2 ] && [ $# != 3 ]; then
     exit -1
 fi
 
-if [ $# == 3 ] && [ "$3" != "--force" ]; then
+if [ $# == 3 ] && [ "$3" != "--force" ] && [ "$3" != "--force-expanded" ]; then
     echo "Usage: update_one_archive_volset.sh <type> <volset> [--force | --force-expanded]"
     exit -1
 fi
