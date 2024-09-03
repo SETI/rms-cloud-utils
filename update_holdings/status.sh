@@ -6,3 +6,5 @@ echo "Total:  " $TOTAL
 echo "Success:" $SUCCESS
 echo "Fail:   " $FAIL
 echo "Neither:" `expr $TOTAL - $SUCCESS - $FAIL`
+grep FAIL logs/*
+
