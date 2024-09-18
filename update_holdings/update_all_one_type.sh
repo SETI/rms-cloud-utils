@@ -16,7 +16,7 @@ FORCE=$2
 
 echo "** Updating all volsets of type ${TYPE}"
 
-for VOLSET_PATH in $(gsutil ls gs://rms-node-holdings/pds3-holdings/archives-${TYPE}); do
+for VOLSET_PATH in $(gsutil -u rms-node-419806 ls gs://rms-node-holdings/pds3-holdings/archives-${TYPE}); do
     VOLSET=$(basename ${VOLSET_PATH})
     echo Updating volset ${TYPE}/${VOLSET}
     ./update_one_archive_volset.sh ${TYPE} ${VOLSET} ${FORCE}
