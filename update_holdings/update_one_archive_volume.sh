@@ -25,7 +25,7 @@ mkdir -p ${VOLSET}
 
 COPY_ARCHIVE=0
 
-gsutil cp gs://rms-node-holdings/pds3-holdings/archives-${TYPE}/${VOLSET}/${ARCHIVE_FILE} ${VOLSET}/${ARCHIVE_FILE}
+gsutil -u rms-node-419806 cp gs://rms-node-holdings/pds3-holdings/archives-${TYPE}/${VOLSET}/${ARCHIVE_FILE} ${VOLSET}/${ARCHIVE_FILE}
 if [ $? -ne 0 ]; then
     echo "FAIL: gsutil cp gs://rms-node-holdings/pds3-holdings/archives-${TYPE}/${VOLSET}/${ARCHIVE_FILE} ${VOLSET}/${ARCHIVE_FILE}"
     rm -f ${VOLSET}/${ARCHIVE_FILE}
@@ -43,7 +43,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 echo "** gsutil -m rsync -r ${VOLSET}/${VOLUME} gs://rms-node-holdings/pds3-holdings/${TYPE}/${VOLSET}/${VOLUME}"
-gsutil -m rsync -r ${VOLSET}/${VOLUME} gs://rms-node-holdings/pds3-holdings/${TYPE}/${VOLSET}/${VOLUME}
+gsutil -u rms-node-419806 -m rsync -r ${VOLSET}/${VOLUME} gs://rms-node-holdings/pds3-holdings/${TYPE}/${VOLSET}/${VOLUME}
 if [ $? -ne 0 ]; then
     echo "FAIL: gsutil -m rsync -r ${VOLSET}/${VOLUME} gs://rms-node-holdings/pds3-holdings/${TYPE}/${VOLSET}/${VOLUME}"
     rm -f ${VOLSET}/${ARCHIVE_FILE}
