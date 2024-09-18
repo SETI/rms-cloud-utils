@@ -26,7 +26,7 @@ echo "** Updating all volumes of type ${TYPE} in volset ${VOLSET}"
 
 mkdir -p logs
 
-for ARCHIVE_PATH in $(gsutil ls gs://rms-node/holdings/archives-${TYPE}/${VOLSET}); do
+for ARCHIVE_PATH in $(gsutil ls gs://rms-node-holdings/pds3-holdings/archives-${TYPE}/${VOLSET}); do
     ARCHIVE_FILE=$(basename ${ARCHIVE_PATH})
     VOLUME=${ARCHIVE_FILE%"${TARGZ}"}
     echo Updating volume ${TYPE}/${VOLSET}/${VOLUME}
